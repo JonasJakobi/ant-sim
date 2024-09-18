@@ -235,7 +235,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 24.76
+  orthographic size: 294.75
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -260,7 +260,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 40.9, y: 39.9, z: -10}
+  m_LocalPosition: {x: 455, y: 436, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -310,7 +310,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 138af852db860ba4894c1b6aa0e46a43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numAnts: 100000
+  numAnts: 10000
   randomNumberAmount: 431
   antStats:
     speed: 0.42
@@ -366,7 +366,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   drawGridGizmo: 0
-  drawIntensityGizmo: 1
+  drawIntensityGizmo: 0
   pheromoneData:
     decayRate: 0.1
   gridData:
