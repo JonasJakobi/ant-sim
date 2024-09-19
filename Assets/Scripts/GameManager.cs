@@ -7,7 +7,7 @@ using UnityEngine.Events;
 public class GameManager : Singleton<GameManager>
 {
 
-
+    public UnityEvent onPointOneSecondTick = new UnityEvent();
     public UnityEvent onPointTwoSecondTick = new UnityEvent();
     public UnityEvent onOneSecondTick = new UnityEvent();
 
@@ -15,6 +15,7 @@ public class GameManager : Singleton<GameManager>
     {
         StartCoroutine(PointTwoSecondTickCoroutine());
         StartCoroutine(OneSecondTickCoroutine());
+        StartCoroutine(PointOneSecondTickCoroutine());
     }
 
     private IEnumerator PointTwoSecondTickCoroutine()
@@ -24,6 +25,15 @@ public class GameManager : Singleton<GameManager>
         {
             yield return wait;
             onPointTwoSecondTick?.Invoke();
+        }
+    }
+    private IEnumerator PointOneSecondTickCoroutine()
+    {
+        WaitForSeconds wait = new WaitForSeconds(0.1f);
+        while (true)
+        {
+            yield return wait;
+            onPointOneSecondTick?.Invoke();
         }
     }
 
@@ -36,4 +46,5 @@ public class GameManager : Singleton<GameManager>
             onOneSecondTick?.Invoke();
         }
     }
+
 }

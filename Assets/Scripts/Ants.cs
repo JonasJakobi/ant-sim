@@ -8,11 +8,12 @@ using UnityEngine.Jobs;
 using Unity.Collections;
 using System.Runtime.CompilerServices;
 [BurstCompile]
-public class Ants : MonoBehaviour
+public class Ants : Singleton<Ants>
 {   
     public int numAnts = 1000;
     public int randomNumberAmount = 50000;
     public AntStats antStats;
+    public AntData antData;
 
     public Vector2 xBounds = new Vector2(0.5f, 2);
     public Vector2 yBounds = new Vector2(0.5f, 2);
@@ -22,8 +23,10 @@ public class Ants : MonoBehaviour
 
     private bool _spawned = false;
     private List<Transform> _antTransforms = new List<Transform>();
-    private TransformAccessArray _antTransformAccessArray;
-    public NativeArray<float> randomNumbers;
+    private NativeArray<float> _randomNumbers;
+
+    public JobHandle antRotationJobHandle;
+    public JobHandle antMovementJobHandle;
     
 
     //---------------  UNITY CALLBACKS ------
@@ -31,6 +34,7 @@ public class Ants : MonoBehaviour
     {
         GenerateRandomNumbers();
         InitializeAnts();
+        GameManager.Instance.onPointOneSecondTick.AddListener(CallUpdateAntsRotationJob);
     }
 
     void Update()
@@ -50,58 +54,89 @@ public class Ants : MonoBehaviour
             ant.transform.Rotate(0, 0, UnityEngine.Random.Range(0, 360));
             _antTransforms.Add(ant.transform);
         }
-        _antTransformAccessArray = new TransformAccessArray(_antTransforms.ToArray());
+        antData.antTransforms = new TransformAccessArray(_antTransforms.ToArray());
         _spawned = true;
     }
     private void GenerateRandomNumbers(){
-        randomNumbers = new NativeArray<float>(randomNumberAmount, Allocator.Persistent);
+        _randomNumbers = new NativeArray<float>(randomNumberAmount, Allocator.Persistent);
         for(int i = 0; i < randomNumberAmount; i++)
         {
-            randomNumbers[i] = UnityEngine.Random.Range(minAngleChange, maxAngleChange);
+            _randomNumbers[i] = UnityEngine.Random.Range(minAngleChange, maxAngleChange);
         }
     }
-
-    
     private void CallMoveAntsJob(){
-        ControlAntsJob controlAntsJob = new ControlAntsJob();
-        controlAntsJob.deltaTime = Time.deltaTime;
-        controlAntsJob.antStats = antStats;
-        controlAntsJob.frameCount = Time.frameCount;
-        controlAntsJob.randomRotations = randomNumbers;
-        controlAntsJob.gridData = PheromoneManager.Instance.gridData;
-        controlAntsJob.pheromoneData = PheromoneManager.Instance.pheromoneData;
-        JobHandle jobHandle = controlAntsJob.Schedule(_antTransformAccessArray);
+        antRotationJobHandle.Complete();
+        MoveAntsJob moveAntsJob = new MoveAntsJob();
+        moveAntsJob.antStats = antStats;
+        moveAntsJob.deltaTime = Time.deltaTime;
+        moveAntsJob.gridData = PheromoneManager.Instance.gridData;
+        antMovementJobHandle = moveAntsJob.Schedule(antData.antTransforms);
+    }
+    
+    private void CallUpdateAntsRotationJob(){
+        UpdateAntsRotationJob updateAntsRotationJob = new UpdateAntsRotationJob();
+        updateAntsRotationJob.antStats = antStats;
+        updateAntsRotationJob.frameCount = Time.frameCount;
+        updateAntsRotationJob.randomRotations = _randomNumbers;
+        updateAntsRotationJob.gridData = PheromoneManager.Instance.gridData;
+        updateAntsRotationJob.pheromoneData = PheromoneManager.Instance.pheromoneData;
+        antRotationJobHandle = updateAntsRotationJob.Schedule(antData.antTransforms);
     }
 
+    [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+   // [BurstCompile]
+    public struct MoveAntsJob : IJobParallelForTransform
+    {
+        [ReadOnly] public GridData gridData;
+        [ReadOnly] public AntStats antStats;
+        [ReadOnly] public float deltaTime;
+        public void Execute(int index, TransformAccess transform)
+        {
+            //move forward
+            transform.position += transform.localRotation * new float3(1,0,0) * antStats.speed * deltaTime;
+            //if out of bounds. loop around
+            if(transform.position.x < 0){
+                transform.position = new float3(gridData.gridWidth * gridData.gridResolution, transform.position.y, transform.position.z);
+            }
+            else if(transform.position.x > gridData.gridWidth * gridData.gridResolution){
+                transform.position = new float3(0, transform.position.y, transform.position.z);
+            }
+            if(transform.position.y < 0){
+                transform.position = new float3(transform.position.x, gridData.gridHeight * gridData.gridResolution, transform.position.z);
+            }
+            else if(transform.position.y > gridData.gridHeight * gridData.gridResolution){
+                transform.position = new float3(transform.position.x, 0, transform.position.z);
+            }
+
+        }
+    }
     // ------------------ JOBS ------
     [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
    // [BurstCompile]
-    public struct ControlAntsJob : IJobParallelForTransform
+    public struct UpdateAntsRotationJob : IJobParallelForTransform
     {
         [ReadOnly] public NativeArray<float> randomRotations;
         [ReadOnly] public int frameCount;
-        [ReadOnly] public float deltaTime;
         [ReadOnly] public AntStats antStats;
         [ReadOnly] public PheromoneData pheromoneData;
         [ReadOnly] public GridData gridData;
         public void Execute(int index, TransformAccess transform)
         {
-            //move forward
-            transform.position += transform.localRotation * new float3(1,0,0) * antStats.speed * deltaTime;
-
+            
             //Random rotation
             quaternion rotation = quaternion.Euler(0, 0, GetRandomAngle(index));
             transform.rotation = math.mul(transform.rotation, rotation);
         
             //rotate towards pheromone
+            float frontPheromone = GetPheromoneIntensity(transform.position, transform.rotation, 0); // forward
             float frontLeftPheromone = GetPheromoneIntensity(transform.position, transform.rotation, math.PI / 4);  // 45 degrees left
             float frontRightPheromone = GetPheromoneIntensity(transform.position, transform.rotation, -math.PI / 4); // 45 degrees right
 
-            if(frontLeftPheromone < frontRightPheromone){
-                transform.rotation = math.mul(transform.rotation, quaternion.Euler(0, 0, -antStats.pheromonerotationSpeed * frontLeftPheromone * deltaTime));
+            if(frontRightPheromone > frontLeftPheromone && frontRightPheromone > frontPheromone){
+                transform.rotation = math.mul(transform.rotation, quaternion.Euler(0, 0, -antStats.pheromonerotationSpeed * frontRightPheromone));
             }
-            else{
-                transform.rotation = math.mul(transform.rotation, quaternion.Euler(0, 0, antStats.pheromonerotationSpeed * frontRightPheromone * deltaTime));
+            else if (frontLeftPheromone > frontRightPheromone && frontLeftPheromone > frontPheromone){
+                transform.rotation = math.mul(transform.rotation, quaternion.Euler(0, 0, antStats.pheromonerotationSpeed * frontLeftPheromone));
             }
 
             
@@ -113,15 +148,19 @@ public class Ants : MonoBehaviour
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetGridIndex(float3 position){
-            int gridX = (int)math.floor(position.x / gridData.gridResolution);
-            int gridY = (int)math.floor(position.y / gridData.gridResolution);
+            int gridX = (int)math.round(position.x / gridData.gridResolution);
+            int gridY = (int)math.round(position.y / gridData.gridResolution);
+            if(gridX < 0 || gridX >= gridData.gridWidth || gridY < 0 || gridY >= gridData.gridHeight)
+            {
+                return -1;
+            }
             return gridX + gridY * gridData.gridWidth;
         } 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float GetRandomAngle(int index){
             //random rotation
             int mangledFrameCount = (frameCount * 13) ^ (frameCount >> 2) * index;
-            float randomAngle = randomRotations[mangledFrameCount % randomRotations.Length] * antStats.rotationSpeed * deltaTime;
+            float randomAngle = randomRotations[mangledFrameCount % randomRotations.Length] * antStats.rotationSpeed;
             return randomAngle;
         }
         // Get the pheromone intensity at the specified angle (forward, front-left, front-right)
@@ -137,7 +176,9 @@ public class Ants : MonoBehaviour
 
             // Get the grid index at the new position
             int newGridIndex = GetGridIndex(newPosition);
-
+            if(newGridIndex == -1){ // index of -1 means out of bounds
+                return 0;
+            }
             // Return the pheromone intensity at the new grid position
             return pheromoneData.pheromoneIntensity[newGridIndex];
         }

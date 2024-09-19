@@ -152,6 +152,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec2669f46e33d444d94418d4c0ca2cb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  onPointOneSecondTick:
+    m_PersistentCalls:
+      m_Calls: []
   onPointTwoSecondTick:
     m_PersistentCalls:
       m_Calls: []
@@ -235,7 +238,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 294.75
+  orthographic size: 81.11
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -260,7 +263,7 @@ Transform:
   m_GameObject: {fileID: 519420028}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 455, y: 436, z: -10}
+  m_LocalPosition: {x: 274, y: 301, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -278,9 +281,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56eb44471b990ac41995a0a9ece32099, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  zoomSpeed: 3
-  minZoom: 0.2
-  maxZoom: 100
+  zoomSpeed: 1
+  minZoom: 0.1
+  maxZoom: 250
 --- !u!1 &755654353
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,14 +313,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 138af852db860ba4894c1b6aa0e46a43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numAnts: 10000
+  numAnts: 8000
   randomNumberAmount: 431
   antStats:
-    speed: 0.42
-    rotationSpeed: 3.47
-    pheromonerotationSpeed: 10.36
-  xBounds: {x: 183.9, y: 725}
-  yBounds: {x: 240.4, y: 716.5}
+    speed: 0.5
+    rotationSpeed: 0.1
+    pheromonerotationSpeed: 0.35
+  xBounds: {x: 239.9, y: 283.9}
+  yBounds: {x: 306.8, y: 349.7}
   maxAngleChange: 1
   minAngleChange: -1
   _antPrefab: {fileID: 697548153413958689, guid: 1a5d094d41af58045b54a3999cf71485, type: 3}
@@ -331,6 +334,51 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.059678376, y: -0.671038, z: 0.058306813}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1214003709
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1214003711}
+  - component: {fileID: 1214003710}
+  m_Layer: 0
+  m_Name: TimeManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1214003710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1214003709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74db480de683334469a70e2535349032, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeScale: 1
+--- !u!4 &1214003711
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1214003709}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 305.94162, y: 285.1241, z: 0.09859069}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -365,14 +413,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a21e0476861fc5143a431fa255b7163b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  drawGridGizmo: 0
-  drawIntensityGizmo: 0
+  loadCenteredPheromones: 0
   pheromoneData:
-    decayRate: 0.1
+    decayRate: 0.03
+    increaseRate: 0.1
   gridData:
-    gridWidth: 10000
-    gridHeight: 10000
-    gridResolution: 0.1
+    gridWidth: 3000
+    gridHeight: 3000
+    gridResolution: 0.2
+  drawGridGizmo: 0
+  drawIntensityGizmo: 1
+  intensityGizmoRange: 100
 --- !u!4 &1717422065
 Transform:
   m_ObjectHideFlags: 0
@@ -396,3 +447,4 @@ SceneRoots:
   - {fileID: 755654355}
   - {fileID: 317074348}
   - {fileID: 1717422065}
+  - {fileID: 1214003711}
